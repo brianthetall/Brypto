@@ -20,14 +20,20 @@ import java.security.NoSuchAlgorithmException;
 
 public class AES{
     private static final int DEBUG=0;
-    private byte[] output;
-    private KeyGenerator keyGen;
     private Cipher cipher;
     private Credential creds;
-    //private byte[] IV;
-    //    private transient Key key;
 
-    public class Credential{
+    @Override public boolean equals(Object o){
+	if(o==null)
+	    return false;
+	AES test=(AES)o;
+	if(creds.equals(test.getCreds())){
+	    return true;
+	}
+	return false;
+    }
+
+    public static class Credential{
 
 	byte IV[];
 	private transient Key key;
@@ -41,7 +47,26 @@ public class AES{
 	    this.IV=IV;
 	}
 
-	public String toString(){
+	@Override public boolean equals(Object o){
+	    if(o!=null){
+		Credential c=(Credential)o;
+		if(key.equals(c.getKey())){
+
+		    byte[] cIV=c.getIV();
+		    if(cIV.length!=IV.length)
+			return false;
+		    for(int i=0;i<cIV.length;i++){
+			if(cIV[i] != IV[i])
+			    return false;
+		    }
+
+		    return true;
+		}
+	    }
+	    return false;
+	}
+
+	@Override public String toString(){
 	    return (new String(key.getEncoded())+" "+new String(IV));
 	}	
 
@@ -70,8 +95,11 @@ public class AES{
 	}
 	
     }
-    /*
-      AES constructor called when using a pre-existing key & IV
+
+    /**
+     * AES contructs with known key and IV; useful for decrypting
+     * @param key AES key byte array
+     * @param IV for AES
      */
     public AES(byte[] key,byte[] IV){
 	try{
@@ -86,26 +114,28 @@ public class AES{
     }
     
     public AES() throws Exception{
-	keyGen = KeyGenerator.getInstance("AES");
+	KeyGenerator keyGen = KeyGenerator.getInstance("AES");
 	keyGen.init(128);
 	creds = new Credential(keyGen.generateKey());
+
 	if(DEBUG==1){System.out.println("Generated AES Key = "+new String(creds.getKey().getEncoded(),"UTF8") + "\r\nKey Algorithm="+creds.getKey().getAlgorithm());}
+	
 	cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
     }
 
     public byte[] encrypt(byte[] plain)throws Exception{
 	cipher.init(Cipher.ENCRYPT_MODE,creds.getKey());
-	output = cipher.doFinal(plain);
+	byte[] output = cipher.doFinal(plain);
 	if(DEBUG==1){System.out.println("Cipher Text: " + new String(output,"UTF8"));}
 	if(DEBUG==1){System.out.println("Cipher IV: "+new String(cipher.getIV(),"UTF8"));}
-	//	IV = cipher.getIV();
+
 	creds.setIV(cipher.getIV());
 	return output;
     }
 
     public byte[] encrypt(String plainText) throws Exception{
 	cipher.init(Cipher.ENCRYPT_MODE,creds.getKey());
-	output = cipher.doFinal(plainText.getBytes());
+	byte[] output = cipher.doFinal(plainText.getBytes());
 	if(DEBUG==1){System.out.println("Cipher Text: " + new String(output,"UTF8"));}
 	if(DEBUG==1){System.out.println("Cipher IV: "+new String(cipher.getIV(),"UTF8"));}
 	//	IV = cipher.getIV();
@@ -150,7 +180,7 @@ public class AES{
     public byte[] decrypt(byte[] cipherText) throws Exception{
 	//	cipher.init(Cipher.DECRYPT_MODE,key,new IvParameterSpec(IV));
 	cipher.init(Cipher.DECRYPT_MODE,creds.getKey(),new IvParameterSpec(creds.getIV()));
-	output = cipher.doFinal(cipherText);
+	byte[] output = cipher.doFinal(cipherText);
 	if(DEBUG==1){System.out.println("Plain Text: " + new String(output));}
 	return output;
 	//zero key[]
@@ -193,6 +223,10 @@ public class AES{
      */
     public Credential getCreds(){
 	return creds;
+    }
+
+    public Cipher getCipher(){
+	return cipher;
     }
 
     public static void main(String args[]) throws Exception{

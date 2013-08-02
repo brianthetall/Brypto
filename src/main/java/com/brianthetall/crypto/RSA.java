@@ -63,6 +63,10 @@ public class RSA{
 	return newPlainText;
     }
 
+    /**
+     * DOESNT JAVA.IO.FILE HAVE A FUNCTION FOR THIS?
+     * return file.getTotalSize()
+     */
     protected static int getFileSize(java.io.File file){
 
 	int retval=0;
